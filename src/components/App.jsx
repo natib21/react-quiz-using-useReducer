@@ -8,15 +8,18 @@ import Question from './Question';
 import NextPage from './NextPage';
 import ProgressBar from './ProgressBar';
 import Finished from './Finished';
+import Footer from './Footer';
+import Timer from './Timer';
 const intialValue = {
    questions: [],
    state: 'loading',
    index: 0,
    answer: null,
    point: 0,
-   highScore:0
+   highScore:0,
+   timeRemaining:null,
 };
-
+const SECS_PER_QUESTION = 30;
 const reducer = (state, action) => {
    switch (action.type) {
       case 'resData':
@@ -24,7 +27,7 @@ const reducer = (state, action) => {
       case 'dataFail':
          return { ...state, state: 'Fail' };
       case 'start':
-         return { ...state, state: 'active' };
+         return { ...state, state: 'active',timeRemaining:state.questions.length * SECS_PER_QUESTION };
       case 'newAnswer':
          const question = state.questions.at(state.index);
          console.log(question);
@@ -39,12 +42,16 @@ const reducer = (state, action) => {
          return { ...state, state: 'finished' , highScore : state.point > state.highScore ? state.point: state.highScore};
       case 'restart':
          return {...intialValue,questions:state.questions, state:'ready'}
+      case 'tick':
+         return {...state,timeRemaining:state.timeRemaining - 1,
+            state: state.timeRemaining === 0 ? "finished": state.state
+          }   
       default:
          throw new Error('Invalid Data');
    }
 };
 const App = () => {
-   const [{ questions, state, index, answer, point,highScore }, dispatch] = useReducer(reducer, intialValue);
+   const [{ questions, state, index, answer, point,highScore,timeRemaining }, dispatch] = useReducer(reducer, intialValue);
 
    console.log(state);
    console.log(point);
@@ -74,8 +81,20 @@ const App = () => {
                      maxPoint={maxPoint}
                      answer={answer}
                   />
-                  <Question question={questions[index]} answer={answer} dispatch={dispatch} />
-                  <NextPage dispatch={dispatch} answer={answer} index={index} numQuestion={numQuestions} />
+                  <Question 
+                     question={questions[index]} 
+                     answer={answer} 
+                     dispatch={dispatch} 
+                     />
+                 <Footer>
+                    <Timer dispatch={dispatch} timeRemaining={timeRemaining}/>
+                    <NextPage 
+                      dispatch={dispatch} 
+                      answer={answer} 
+                      index={index} 
+                      numQuestion={numQuestions} 
+                     />
+                  </Footer>
                </>
             )}
             {state === 'finished' && <Finished point={point} maxPoint={maxPoint} highScore={highScore} dispatch={dispatch}/>}
